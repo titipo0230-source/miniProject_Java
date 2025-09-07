@@ -3,20 +3,21 @@ package com.mini.view;
 import java.util.List;
 import java.util.Scanner;
 
-
 import com.mini.model.Religion;
 
 public class GameView {
-	
     private Scanner scanner = new Scanner(System.in);
 
-    public String getSpreadMethodInput() {
-        System.out.println("전파 방식을 입력하세요 (선교자 / 수도승 / 이단심문관) 또는 'exit' 입력 시 종료: ");
+    public String getReligionInput() {
+        System.out.println("종교를 입력하세요 (유교 / 불교 / 기독교 / 이슬람) 또는 'exit' 입력 시 종료: ");
         return scanner.nextLine();
     }
 
-    public void showSpreadResult(String countryName, String religionName, String methodName, int gainedScore, int totalScore) {
-        System.out.println(countryName + "에게 " + religionName + "를 전파합니다. (방식: " + methodName + ") → +" + gainedScore + "점 (누적: " + totalScore + ")");
+    public void showSpreadResult(String countryName, String religionName,
+                                 String methodName, int gainedScore, int totalScore) {
+        System.out.println(countryName + "에 " + religionName +
+                           "가 전파되었습니다. (방식: " + methodName + ") → +" +
+                           gainedScore + "점 (누적: " + totalScore + ")");
     }
 
     public void showReligionScores(List<Religion> religions) {
