@@ -14,11 +14,14 @@ import com.mini.model.SpreadMethod;
 import com.mini.view.GameView;
 
 public class GameController {
+	//리스트 생성
     private List<Country> countries = new ArrayList<>();
     private List<Religion> religions = new ArrayList<>();
     private Map<String, SpreadMethod> spreadMethods = new HashMap<>();
-    private GameView view = new GameView();
+    private GameView gv = new GameView();
     private Random random = new Random();
+    
+    private int turnCount = 0; 
 
     public GameController() {
         Religion confucianism = new Religion("유교");
@@ -41,35 +44,39 @@ public class GameController {
         spreadMethods.put("이단심문관", new SpreadMethod("이단심문관", 3, -3));
     }
 
-    public void startWar() {
+    public void startGame() {
         while (true) {
-            // 사용자 입력: 종교 선택
-            String religionInput = view.getReligionInput();
+            turnCount++;
+            
+            gv.showTurnInfo(turnCount);
 
-            if (religionInput.equalsIgnoreCase("exit")) {
+            // 사용자 입력: 국가 선택
+            String countryInput = gv.getCountryInput();
+
+            if (countryInput.equals("종료")) {
                 System.out.println("게임을 종료합니다.");
                 break;
             }
 
-            Religion chosenReligion = null;
-            for (Religion r : religions) {
-                if (r.getName().equalsIgnoreCase(religionInput)) {
-                    chosenReligion = r;
+            Country chosenCountry = null;
+            for (Country c : countries) {
+                if (c.getName().equals(countryInput)) {
+                    chosenCountry = c;
                     break;
                 }
             }
 
-            if (chosenReligion == null) {
-                System.out.println(" 올바르지 않은 종교 이름입니다, 다시 입력해주세요.");
+            if (chosenCountry == null) {
+                System.out.println("올바르지 않은 국가 이름입니다. 다시 입력해주세요.");
                 continue;
             }
 
-            // 랜덤 가져와서 국가랑 전파 방식 
-            Country selectedCountry = countries.get(random.nextInt(countries.size()));
+            // 랜덤 클래스 이용해서 종교, 전파 방식 정해지기
+            Religion chosenReligion = religions.get(random.nextInt(religions.size()));
             List<SpreadMethod> methods = new ArrayList<>(spreadMethods.values());
             SpreadMethod method = methods.get(random.nextInt(methods.size()));
 
-            // 점수 넣기
+            // 점수 반영
             chosenReligion.addScore(method.getGainScore());
 
             if (method.getLoseScore() != 0) {
@@ -81,32 +88,37 @@ public class GameController {
             }
 
             // 결과 출력
-            view.showSpreadResult(
-                selectedCountry.getName(),
+            gv.showSpreadResult(
+                chosenCountry.getName(),
                 chosenReligion.getName(),
                 method.getName(),
                 method.getGainScore(),
                 chosenReligion.getScore()
             );
 
-            view.showReligionScores(religions);
+            gv.showReligionScores(religions);
             System.out.println("------------");
 
             // 50점 달성 시 우승
             if (chosenReligion.getScore() >= 50) {
-                System.out.println("\n🎉 최종 우승 종교: " + chosenReligion.getName() +
+                System.out.println("****최종 우승 종교: " + chosenReligion.getName() +
                                    " (점수: " + chosenReligion.getScore() + ")");
-
                 saveResultToFile(chosenReligion);
                 break;
+            }
+
+            // 20턴 넘으면 가장 낮은 종교 제거 + 이단심문관 강화
+            if (turnCount > 20 && religions.size()==4) {
+                eliminateLowestReligion();
+                strengthenInquisitor();
+                
             }
         }
     }
 
-    //파일 FileWriter BufferedWriter 사용
+    //파일 저장 fileWriter, BufferedWriter, try-resource 
     private void saveResultToFile(Religion winner) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter("result.txt"))) {
-
             bw.write("=== 종교별 점수표 ===");
             bw.newLine();
 
@@ -116,14 +128,33 @@ public class GameController {
             }
 
             bw.newLine();
-            bw.write("*****최종 우승 종교: " + winner.getName() +
+            bw.write("최종 우승 종교: " + winner.getName() +
                      " (점수: " + winner.getScore() + ")");
             bw.newLine();
 
-            System.out.println("결과가 파일에 저장 완료됐습니다.");
-
+            System.out.println("결과가 파일에 저장되었습니다.");
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // 가장 낮은 점수의 종교 제거
+    private void eliminateLowestReligion() {
+
+        Religion min = religions.get(0);
+        for (Religion r : religions) {
+            if (r.getScore() <= min.getScore()) {
+                min = r;
+            }
+        }
+
+        System.out.println( min.getName() + " 종교가 가장 낮은 점수이기 때문에 사라집니다.");
+        religions.remove(min);
+    }
+
+    // 이단심문관 효과 수정
+    private void strengthenInquisitor() {
+        spreadMethods.put("이단심문관", new SpreadMethod("이단심문관", 5, -5));
+        System.out.println("이단심문관 수정 완료");
     }
 }
